@@ -19,10 +19,12 @@ class Day03 : Day(3, 2023, "Gear Ratios") {
     override fun part2(): Long {
         val startOfNumbers = schematic.searchIndices {
             it == '*'
-        }.map {
+        }.toList().map {
             it.surroundingNeighbors(schematic.area)
                 .filter { schematic[it].isDigit() }
                 .map { it.leftWhile { it in schematic.area && schematic[it].isDigit() } }.toSet()
+        }.also { c ->
+            println(schematic.formatted(transform = highlight(c.flatten())))
         }.filter {
             it.size == 2
         }

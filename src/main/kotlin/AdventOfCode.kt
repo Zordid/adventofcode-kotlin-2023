@@ -1,7 +1,8 @@
 @file:Suppress("unused")
 
 import AoCWebInterface.Verdict
-import Part.*
+import Part.P1
+import Part.P2
 import com.github.ajalt.mordant.rendering.TextColors.*
 import com.github.ajalt.mordant.rendering.TextStyles
 import com.github.ajalt.mordant.terminal.Terminal

@@ -1,6 +1,6 @@
 package utils.dim3d
 
-import utils.range
+import utils.minMax
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 
@@ -47,10 +47,10 @@ fun asPoint3D(l: List<Int>): Point3D {
 }
 
 fun Iterable<Point3D>.boundingCube(): Cube {
-    val xr = map { it.x }.range()
-    val yr = map { it.y }.range()
-    val zr = map { it.z }.range()
-    return Cube(Point3D(xr.first, yr.first, zr.first), Point3D(xr.last, yr.last, zr.last))
+    val xr = map { it.x }.minMax()
+    val yr = map { it.y }.minMax()
+    val zr = map { it.z }.minMax()
+    return Cube(Point3D(xr.min, yr.min, zr.min), Point3D(xr.max, yr.max, zr.max))
 }
 
 operator fun Cube.contains(p: Point3D) =

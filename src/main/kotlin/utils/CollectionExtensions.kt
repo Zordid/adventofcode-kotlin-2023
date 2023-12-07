@@ -49,7 +49,7 @@ fun Pair<Long, Long>.asRange(): LongRange = min(first, second)..max(first, secon
 /**
  * Returns the smallest and largest element or `null` if there are no elements.
  */
-fun <T : Comparable<T>> Iterable<T>.minMaxOrNull(): Pair<T, T>? {
+fun <T : Comparable<T>> Iterable<T>.minMaxOrNull(): MinMaxResult<T>? {
     val iterator = iterator()
     if (!iterator.hasNext()) return null
     var min = iterator.next()
@@ -59,23 +59,30 @@ fun <T : Comparable<T>> Iterable<T>.minMaxOrNull(): Pair<T, T>? {
         if (min > e) min = e
         if (e > max) max = e
     }
-    return min to max
+    return MinMaxResult(min, max)
+}
+
+data class MinMaxResult<T : Comparable<T>>(
+    val min: T, val max: T
+) : ClosedRange<T> {
+    override val endInclusive: T get() = min
+    override val start: T get() = max
 }
 
 /**
  * Returns the smallest and largest element or throws [NoSuchElementException] if there are no elements.
  */
-fun <T : Comparable<T>> Iterable<T>.minMax(): Pair<T, T> = minMaxOrNull() ?: throw NoSuchElementException()
+fun <T : Comparable<T>> Iterable<T>.minMax(): MinMaxResult<T> = minMaxOrNull() ?: throw NoSuchElementException()
 
 /**
  * Returns the smallest and largest element or `null` if there are no elements.
  */
-fun <T : Comparable<T>> Sequence<T>.minMaxOrNull(): Pair<T, T>? = asIterable().minMaxOrNull()
+fun <T : Comparable<T>> Sequence<T>.minMaxOrNull(): MinMaxResult<T>? = asIterable().minMaxOrNull()
 
 /**
  * Returns the smallest and largest element or throws [NoSuchElementException] if there are no elements.
  */
-fun <T : Comparable<T>> Sequence<T>.minMax(): Pair<T, T> = minMaxOrNull() ?: throw NoSuchElementException()
+fun <T : Comparable<T>> Sequence<T>.minMax(): MinMaxResult<T> = minMaxOrNull() ?: throw NoSuchElementException()
 
 /**
  * Returns the first element yielding the smallest and the first element yielding the largest value
@@ -112,26 +119,6 @@ inline fun <T, R : Comparable<R>> Iterable<T>.minMaxBy(selector: (T) -> R): Pair
     minMaxByOrNull(selector) ?: throw NoSuchElementException()
 
 /**
- * Returns the smallest and largest value as a range or `null` if there are no elements.
- */
-fun Iterable<Int>.rangeOrNull(): IntRange? = minMaxOrNull()?.let { it.first..it.second }
-
-/**
- * Returns the smallest and largest value as a range or throws [NoSuchElementException] if there are no elements.
- */
-fun Iterable<Int>.range(): IntRange = rangeOrNull() ?: throw NoSuchElementException()
-
-/**
- * Returns the smallest and largest value as a range or `null` if there are no elements.
- */
-fun Iterable<Long>.rangeOrNull(): LongRange? = minMaxOrNull()?.let { it.first..it.second }
-
-/**
- * Returns the smallest and largest value as a range or throws [NoSuchElementException] if there are no elements.
- */
-fun Iterable<Long>.range(): LongRange = rangeOrNull() ?: throw NoSuchElementException()
-
-/**
  * Efficiently generate the top [n] smallest elements without sorting all elements.
  */
 @Suppress("DuplicatedCode")
@@ -147,7 +134,7 @@ fun <T : Comparable<T>> Iterable<T>.minN(n: Int): List<T> {
     val smallest = ArrayList<T>(n.coerceAtMost(10))
     var min = iterator.next()
         .also { smallest += it }
-        .let { it to it }
+        .let { MinMaxResult(it, it) }
 
     while (iterator.hasNext()) {
         val e = iterator.next()
@@ -155,14 +142,14 @@ fun <T : Comparable<T>> Iterable<T>.minN(n: Int): List<T> {
             smallest.size < n -> {
                 smallest += e
                 min = when {
-                    e < min.first -> e to min.second
-                    e > min.second -> min.first to e
+                    e < min.min -> min.copy(min = e)
+                    e > min.max -> min.copy(max = e)
                     else -> min
                 }
             }
 
-            e < min.second -> {
-                val removeAt = smallest.indexOfLast { it.compareTo(min.second) == 0 }
+            e < min.max -> {
+                val removeAt = smallest.indexOfLast { it.compareTo(min.max) == 0 }
                 smallest.removeAt(removeAt)
                 smallest += e
                 min = smallest.minMax()
@@ -188,7 +175,7 @@ fun <T : Comparable<T>> Iterable<T>.maxN(n: Int): List<T> {
     val largest = ArrayList<T>(n.coerceAtMost(10))
     var max = iterator.next()
         .also { largest += it }
-        .let { it to it }
+        .let { MinMaxResult(it, it) }
 
     while (iterator.hasNext()) {
         val e = iterator.next()
@@ -196,14 +183,14 @@ fun <T : Comparable<T>> Iterable<T>.maxN(n: Int): List<T> {
             largest.size < n -> {
                 largest += e
                 max = when {
-                    e < max.first -> e to max.second
-                    e > max.second -> max.first to e
+                    e < max.min -> max.copy(min = e)
+                    e > max.max -> max.copy(max = e)
                     else -> max
                 }
             }
 
-            e > max.first -> {
-                val removeAt = largest.indexOfLast { it.compareTo(max.first) == 0 }
+            e > max.min -> {
+                val removeAt = largest.indexOfLast { it.compareTo(max.min) == 0 }
                 largest.removeAt(removeAt)
                 largest += e
                 max = largest.minMax()

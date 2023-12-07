@@ -1,5 +1,8 @@
 package utils
 
+import com.github.ajalt.mordant.rendering.TextColors
+import com.github.ajalt.mordant.rendering.TextStyle
+
 /**
  * An alias for looking at `List<List<T>>` as a [Grid].
  *
@@ -144,6 +147,10 @@ fun <T> Grid<T>.formatted(
         val value = this[row].getOrElse(col) { return@element filler }
         transform(col to row, value)
     }
+}
+
+fun highlight(highlight: Iterable<Point>, style: TextStyle = TextColors.brightRed): (Point, Any?) -> String = { p, v ->
+    if (p in highlight) style("$v") else "$v"
 }
 
 fun <T> MapGrid<T>.formatted(

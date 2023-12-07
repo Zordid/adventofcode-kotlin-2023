@@ -42,7 +42,7 @@ class RangeExtensionsTest : StringSpec({
     }
 
     "subtract ranges from one range (aka 'poking holes')" {
-        (1..10).minus(5..8) shouldBe listOf(1..4, 9..10)
+        (1..10).subtract(5..8) shouldBe listOf(1..4, 9..10)
         (1..10).subtract(7..100) shouldBe listOf(1..6)
         (1..10).subtract(-7..2) shouldBe listOf(3..10)
 
