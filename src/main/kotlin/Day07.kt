@@ -1,92 +1,82 @@
-val cv = listOf('A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2').reversed()
-val cv2 = listOf('A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J').reversed()
+import CamelCards.Hand
+import CamelCards.compareUsing
 
-class Day07 : Day(7, 2023) {
+class Day07 : Day(7, 2023, "Camel Cards") {
+
+    private val handsAndBids = input.map {
+        it.split(' ').let { (hand, bid) ->
+            Hand(hand.toList()) to bid.toLong()
+        }
+    }.show()
+
+    override fun part1() =
+        handsAndBids
+            .sortedWith(compareBy(compareUsing(Hand::type, CamelCards.cardValuesPt1)) { it.first })
+            .totalWinnings()
+
+    override fun part2() =
+        handsAndBids
+            .sortedWith(compareBy(compareUsing(Hand::highestType, CamelCards.cardValuesPt2)) { it.first })
+            .totalWinnings()
+
+    private fun List<Pair<Hand, Long>>.totalWinnings() =
+        withIndex().sumOf { (index, handAndBid) ->
+            val rank = index + 1
+            val (_, bid) = handAndBid
+            rank * bid
+        }
+
+}
+
+object CamelCards {
+
+    val cardValuesPt1 = listOf('A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2').reversed()
+    val cardValuesPt2 = listOf('A', 'K', 'Q', 'T', '9', '8', '7', '6', '5', '4', '3', '2', 'J').reversed()
 
     enum class Type {
         FIVE, FOUR, FULL, THREE, TWO_PAIR, ONE_PAIR, HIGH
     }
 
-    data class Hand(val cards: List<Char>) : Comparable<Hand> {
-        val type: Type
-            get() {
-                return when {
-                    cards.groupingBy { it }.eachCount().values.toSet() == setOf(5) -> Type.FIVE
-                    cards.groupingBy { it }.eachCount().values.toSet() == setOf(1, 4) -> Type.FOUR
-                    cards.groupingBy { it }.eachCount().values.toSet() == setOf(2, 3) -> Type.FULL
-                    cards.groupingBy { it }.eachCount().values.sorted() == listOf(1, 1, 3) -> Type.THREE
-                    cards.groupingBy { it }.eachCount().values.sorted() == listOf(1, 2, 2) -> Type.TWO_PAIR
-                    cards.groupingBy { it }.eachCount().values.sorted() == listOf(1, 1, 1, 2) -> Type.ONE_PAIR
-                    else -> Type.HIGH
-                }
-            }
+    fun List<Char>.histogram() = groupingBy { it }.eachCount().values.sorted()
 
-        val highestType: Type
-            get() {
-                val js = cards.count { it == 'J' }
-                val left = cards.filter { it != 'J' }
-                val d = left.groupingBy { it }.eachCount().values.sorted()
-                return when (js) {
-                    5 -> Type.FIVE
-                    4 -> Type.FIVE
-                    3 -> when (d) {
-                        listOf(2) -> Type.FIVE
-                        listOf(1, 1) -> Type.FOUR
-                        else -> error(toString())
-                    }
+    fun List<Int>.histogramToType(): Type = when (this.joinToString("")) {
+        "5" -> Type.FIVE
+        "14" -> Type.FOUR
+        "23" -> Type.FULL
+        "113" -> Type.THREE
+        "122" -> Type.TWO_PAIR
+        "1112" -> Type.ONE_PAIR
+        "11111" -> Type.HIGH
+        else -> error("Wrong histogram: $this")
+    }
 
-                    2 -> when (d) {
-                        listOf(3) -> Type.FIVE
-                        listOf(1, 2) -> Type.FOUR
-                        listOf(1, 1, 1) -> Type.THREE
-                        else -> error(toString())
-                    }
-
-                    1 -> when (d) {
-                        listOf(4) -> Type.FIVE
-                        listOf(2, 2) -> Type.FULL
-                        listOf(1, 3) -> Type.FOUR
-                        listOf(1, 1, 2) -> Type.THREE
-                        listOf(1, 1, 1, 1) -> Type.ONE_PAIR
-                        else -> error("$d")
-                    }
-
-                    0 -> type
-                    else -> error("$d")
-                }
-            }
-
-        override fun compareTo(other: Hand): Int {
-            if (this == other) return 0
-
-            if (this.highestType.ordinal < other.highestType.ordinal) return +1
-            if (this.highestType.ordinal > other.highestType.ordinal) return -1
-
-            val my = cards.map { cv2.indexOf(it) }
-            val ov = other.cards.map { cv2.indexOf(it) }
-            return my.zip(ov).first { (a, b) -> a != b }.let { (m, o) ->
-                m.compareTo(o)
-            }
+    data class Hand(val cards: List<Char>) {
+        val type: Type = cards.histogram().histogramToType()
+        val highestType: Type = run {
+            val jCount = cards.count { it == 'J' }
+            if (jCount < 5) {
+                val rest = cards.filter { it != 'J' }
+                rest.histogram().let { it.dropLast(1) + (it.last() + jCount) }.histogramToType()
+            } else Type.FIVE
         }
 
         override fun toString(): String {
             return cards.joinToString("") + " type: $type"
         }
+
     }
 
-    val p = input.map {
-        it.split(' ').let { (hand, bid) ->
-            Hand(hand.toList()) to bid.toInt()
+    fun compareUsing(typeSelector: (Hand) -> Type, values: List<Char>) = Comparator<Hand> { o1, o2 ->
+        if (o1 == o2) return@Comparator 0
+
+        if (typeSelector(o1) < typeSelector(o2)) return@Comparator +1
+        if (typeSelector(o1) > typeSelector(o2)) return@Comparator -1
+
+        o1.cards.zip(o2.cards).first { (c1, c2) -> c1 != c2 }.let { (c1, c2) ->
+            values.indexOf(c1).compareTo(values.indexOf(c2))
         }
-    }.show()
 
-    override fun part2(): Any? {
-
-        return p.sortedBy { it.first }.withIndex().also { println(it.toList().joinToString("\n")) }.map { (index, h) ->
-            ((index + 1) * h.second).toLong()
-        }.sum()
     }
-
 }
 
 fun main() {
