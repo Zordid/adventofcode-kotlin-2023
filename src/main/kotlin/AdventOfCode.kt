@@ -224,7 +224,7 @@ open class Day private constructor(
         header
         runWithTiming("1") { part1 }
         runWithTiming("2") { part2 }
-        if (fqd.isToday()) submit(part1, part2)
+        if (fqd.isToday() && AoC.canSubmit) submit(part1, part2)
     }
 
     private fun submit(part1: Any?, part2: Any?) {
@@ -404,7 +404,9 @@ private fun Any?.restrictWidth(minWidth: Int, maxWidth: Int) = with("$this") {
 
 object AoC {
 
-    private val web = AoCWebInterface(getSessionCookie())
+    private val sessionCookie = getSessionCookie()
+    private val web = AoCWebInterface(sessionCookie)
+    val canSubmit = sessionCookie != null
 
     fun sendToClipboard(a: Any?): Boolean {
         if (a in listOf(null, 0, -1, Day.NotYetImplemented)) return false
