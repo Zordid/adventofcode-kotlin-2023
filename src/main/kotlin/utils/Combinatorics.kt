@@ -7,9 +7,11 @@ infix fun Int.choose(k: Int) = comb(this, k)
  */
 @Suppress("LocalVariableName")
 fun comb(n: Int, k: Int): Long {
-    require(n >= 0 && k >= 0) { "k and n must be positive numbers" }
+    // binomial coefficient for negative n, see e.g. https://math.stackexchange.com/questions/3377614/n-choose-k-where-n-is-negative
+    if (n < 0) return (if (k % 2 == 0) 1 else -1) * comb(-n + k - 1, k)
+
+    if (k < 0 || k > n) return 0
     if (k == 0 || k == n) return 1
-    if (k > n) return 0
 
     var N = n.toLong()
     val K = if (2L * k > N) N - k else k.toLong()
