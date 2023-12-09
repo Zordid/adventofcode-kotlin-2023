@@ -1,5 +1,25 @@
 package utils
 
+infix fun Int.choose(k: Int) = comb(this, k)
+
+/**
+ * Efficient calculation of combinations of k from n: "n choose k"
+ */
+@Suppress("LocalVariableName")
+fun comb(n: Int, k: Int): Long {
+    require(n >= 0 && k >= 0) { "k and n must be positive numbers" }
+    if (k == 0 || k == n) return 1
+    if (k > n) return 0
+
+    var N = n.toLong()
+    val K = if (2L * k > N) N - k else k.toLong()
+    var result = 1L
+    for (i in 1L..K) {
+        result = (result * N--) / i
+    }
+    return result
+}
+
 /**
  * Generates all combinations of the elements of the given [Iterable] for the requested size.
  * Note: combinations do not include all their permutations!
@@ -83,7 +103,7 @@ fun IntRange.permutations(): Sequence<List<Int>> =
         first == last -> sequenceOf(listOf(first))
         else -> {
             val head = first
-            val tail = first+1..last
+            val tail = first + 1..last
             tail.permutations().flatMap { perm ->
                 (0..perm.size).asSequence().map { perm.copyAndInsert(it, head) }
             }

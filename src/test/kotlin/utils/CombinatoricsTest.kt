@@ -1,13 +1,52 @@
 package utils
 
+import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
-import org.junit.jupiter.api.Test
+import io.kotest.matchers.longs.shouldBeExactly
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.filter
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.positiveInt
+import io.kotest.property.checkAll
 
-internal class CombinatoricsTest {
+class CombinatoricsTest : FunSpec({
 
-    @Test
-    fun `simple combinations of 2 elements`() {
+    context("choose function") {
+        test("anything choose 0 has 1 solution") {
+            checkAll(Arb.int(0..Int.MAX_VALUE)) { n ->
+                println(n)
+                n choose 0 shouldBeExactly 1
+            }
+        }
+
+        test("anything choose (more) has 0 solution") {
+            checkAll(Arb.int(0..1000000), Arb.int(1..10)) { n, delta ->
+                println(n)
+                n choose (n + delta) shouldBeExactly 0
+            }
+        }
+
+        test("symmetry test") {
+            val nKArb = arbitrary {
+                val n = Arb.int(0..1_000_000).bind()
+                val k = Arb.int(0..1_000_000).filter { it <= n }.bind()
+                n to k
+            }
+            checkAll(nKArb) { (n, k)->
+                n choose k shouldBeExactly (n choose (n-k))
+            }
+        }
+
+        test("n choose k") {
+            5 choose 3 shouldBeExactly 10
+            5 choose 2 shouldBeExactly 10
+        }
+    }
+
+
+    test("simple combinations of 2 elements") {
         "a".combinations(2).toList().shouldBeEmpty()
         "ab".combinations(2).toList() shouldContainExactlyInAnyOrder
                 listOf(
@@ -30,8 +69,7 @@ internal class CombinatoricsTest {
                 )
     }
 
-    @Test
-    fun `simple combinations of IntRanges`() {
+    test("simple combinations of IntRanges") {
         (1..1).combinations(2).toList().shouldBeEmpty()
         (1..2).combinations(2).toList() shouldContainExactlyInAnyOrder
                 listOf(
@@ -54,8 +92,7 @@ internal class CombinatoricsTest {
                 )
     }
 
-    @Test
-    fun `test permutations of elements`() {
+    test("test permutations of elements") {
         "".permutations().toList().shouldBeEmpty()
 
         "a".permutations().toList() shouldContainExactlyInAnyOrder
@@ -78,8 +115,7 @@ internal class CombinatoricsTest {
                 )
     }
 
-    @Test
-    fun `test permutations of IntRange`() {
+    test("test permutations of IntRange") {
         @Suppress("EmptyRange")
         (1..0).permutations().toList().shouldBeEmpty()
 
@@ -100,4 +136,4 @@ internal class CombinatoricsTest {
                 )
     }
 
-}
+})
