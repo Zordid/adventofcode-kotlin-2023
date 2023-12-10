@@ -1,141 +1,97 @@
+import PipeMaze.PIPES
+import PipeMaze.correctStartPipe
 import utils.*
 import utils.Direction4.*
 
-class Day10 : Day(10, 2023, "Pipe Maze") {
-    val P = mapOf(
+object PipeMaze {
+    val PIPES = mapOf(
         '|' to setOf(NORTH, SOUTH),
         '-' to setOf(EAST, WEST),
         'L' to setOf(NORTH, EAST),
         'J' to setOf(NORTH, WEST),
-        '7' to setOf(WEST, SOUTH),
+        '7' to setOf(SOUTH, WEST),
         'F' to setOf(SOUTH, EAST),
     )
 
-    val p = inputAsGrid
-    val s = p.searchIndices('S').single().show()
-    val a = p.area
-    val pO = p.searchIndices { it != '.' }.map { it to p[it] }.toMap()
-    val pipes = pO.let { m ->
-        val neighbors = Direction4.all.map { s + it }.filter { it in a }.filter { p ->
-            P[pO[p]]?.any { p + it == s } ?: false
-        }.toSet()
-        require(neighbors.size == 2)
+    fun Map<Point, Char>.correctStartPipe(startPoint: Point): Map<Point, Char> =
+        toMutableMap().apply {
+            val neighbors = startPoint.directNeighbors().filter { neighbor ->
+                PIPES[this[neighbor]]?.any { neighbor + it == startPoint } ?: false
+            }.toSet()
+            require(neighbors.size == 2)
 
-        val element = P.entries.single { e ->
-            e.value == neighbors.map { Direction4.ofVector(s, it) }.toSet()
+            val requiredElement = PIPES.entries.single { (_, connects) ->
+                connects == neighbors.map { Direction4.ofVector(startPoint, it) }.toSet()
+            }.key
+
+            put(startPoint, requiredElement)
         }
+}
 
-        m + (s to element.key)
-    }
+class Day10 : Day(10, 2023, "Pipe Maze") {
+    val maze = inputAsGrid
+    val startPoint = maze.searchIndices('S').single()
+    val mazeArea = maze.area
+    val piping =
+        maze.searchIndices { it != '.' }.associateWith { maze[it] }.correctStartPipe(startPoint)
 
-    override fun part1(): Any? {
-        val posVisited = mutableMapOf(s to 0)
-        val unvisited = pipes.keys.toMutableSet()
+    override fun part1(): Int = traversePipes().first
 
-        while (unvisited.isNotEmpty()) {
-            val lowest = posVisited.values.max()
-            val next = posVisited.entries.filter { it.value == lowest }.map { it.key }
+    override fun part2(): Int = findEnclosedPoints().count()
 
-            var new = 0
-            next.forEach { visit ->
-                val pipe = pipes[visit]!!
-                val canGoTo = P[pipe]!!.map { visit + it }.filter { it in a }
-                canGoTo.forEach {
-                    if ((posVisited[it] ?: Int.MAX_VALUE) > lowest + 1) {
-                        posVisited[it] = lowest + 1
-                        new++
-                    }
-                }
-                unvisited -= visit
-            }
+    fun findEnclosedPoints(): Sequence<Point> {
+        val relevant = traversePipes().second
 
-            if (new == 0) break
-        }
-
-        return posVisited.values.max()
-    }
-
-    override fun part2(): Any? {
-        val posVisited = mutableMapOf(s to 0)
-        val unvisited = pipes.keys.toMutableSet()
-
-        while (unvisited.isNotEmpty()) {
-            val lowest = posVisited.values.max()
-            val next = posVisited.entries.filter { it.value == lowest }.map { it.key }
-
-            var new = 0
-            next.forEach { visit ->
-                val pipe = pipes[visit]!!
-                val canGoTo = P[pipe]!!.map { visit + it }.filter { it in a }
-                canGoTo.forEach {
-                    if ((posVisited[it] ?: Int.MAX_VALUE) > lowest + 1) {
-                        posVisited[it] = lowest + 1
-                        new++
-                    }
-                }
-                unvisited -= visit
-            }
-
-            if (new == 0) break
-        }
-
-        val big = mutableMapOf<Point, Char>()
-        posVisited.keys.forEach { p ->
+        // scale maze by 3 to allow gaps to appear
+        val scaledUpMaze = mutableMapOf<Point, Char>()
+        relevant.keys.forEach { p ->
             val newP = p * 3 + (1 to 1)
-            big[newP] = 'X'
 
-            val e = pipes[p]!!
-
-            when (e) {
-                '|' -> {
-                    big[newP + SOUTH] = 'X'
-                    big[newP + NORTH] = 'X'
-                }
-
-                '-' -> {
-                    big[newP + EAST] = 'X'
-                    big[newP + WEST] = 'X'
-                }
-
-                'L' -> {
-                    big[newP + EAST] = 'X'
-                    big[newP + NORTH] = 'X'
-                }
-
-                'J' -> {
-                    big[newP + WEST] = 'X'
-                    big[newP + NORTH] = 'X'
-                }
-
-                '7' -> {
-                    big[newP + WEST] = 'X'
-                    big[newP + SOUTH] = 'X'
-                }
-
-                'F' -> {
-                    big[newP + EAST] = 'X'
-                    big[newP + SOUTH] = 'X'
-                }
-            }
+            val element = piping[p]!!
+            val dirs = PIPES[element]!!
+            scaledUpMaze[newP] = 'X'
+            dirs.forEach { scaledUpMaze[newP + it] = 'X' }
         }
 
-        val bigA = a.scale(3)
-        val g = MutableGrid(bigA, big) { '.' }
+        val bigArea = mazeArea.scale(3)
+        val fill = MutableGrid(bigArea, scaledUpMaze) { '.' }
 
         val queue = minPriorityQueueOf(origin to 0)
-        while(queue.isNotEmpty()) {
-            val n = queue.extractMin()
-            g[n] = 'o'
-            n.directNeighbors(bigA).filter { g[it] == '.' }.forEach {
+        while (queue.isNotEmpty()) {
+            val visit = queue.extractMin()
+            fill[visit] = 'o'
+            visit.directNeighbors(bigArea).filter { fill[it] == '.' }.forEach {
                 queue.insertOrUpdate(it, 0)
             }
         }
-        //println(g.formatted(bigA))
 
-        return a.allPoints().count { o ->
+        return mazeArea.allPoints().filter { o ->
             val t = o * 3 + (1 to 1)
-            g[t] == '.'
+            fill[t] == '.'
         }
+    }
+
+    fun traversePipes(): Pair<Int, Map<Point, Int>> {
+        val distances = mutableMapOf(startPoint to 0)
+        val queue = minPriorityQueueOf(startPoint to 0)
+
+        var highest = 0
+        while (queue.isNotEmpty()) {
+            val visit = queue.extractMin()
+            val nextLevel = distances[visit]!! + 1
+
+            val pipe = piping[visit]!!
+            val connectedTo = PIPES[pipe]!!.map { visit + it }
+            connectedTo.filter { it in mazeArea }.forEach {
+                if ((distances[it] ?: Int.MAX_VALUE) > nextLevel) {
+                    if (nextLevel > highest) highest = nextLevel
+                    distances[it] = nextLevel
+                    queue.insertOrUpdate(it, nextLevel)
+                }
+            }
+        }
+
+        return highest to distances
     }
 
 }
