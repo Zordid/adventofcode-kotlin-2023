@@ -27,13 +27,28 @@ val Grid<*>.area: Area get() = origin to lastPoint
 val Grid<*>.lastPoint get() = width - 1 to height - 1
 
 /**
- * Creates a new [Grid] with the specified [size], where each element is calculated by calling
+ * Creates a new [Grid] with the specified [area], where each element is calculated by calling
+ * the specified [init] function.
+ */
+inline fun <T> Grid(area: Area, init: (Point) -> T): Grid<T> = MutableGrid(area, init)
+
+/**
+ * Creates a new [Grid] with the specified [width] and [height], where each element is calculated by calling
  * the specified [init] function.
  */
 inline fun <T> Grid(width: Int, height: Int, init: (Point) -> T): Grid<T> = MutableGrid(width, height, init)
 
 /**
- * Creates a new [MutableGrid] with the specified [size], where each element is calculated by calling
+ * Creates a new [MutableGrid] with the specified [area], where each element is calculated by calling
+ * the specified [init] function.
+ */
+inline fun <T> MutableGrid(area: Area, init: (Point) -> T): MutableGrid<T> {
+    area.requireOrigin()
+    return MutableGrid(area.width, area.height, init)
+}
+
+/**
+ * Creates a new [MutableGrid] with the specified [width] and [height], where each element is calculated by calling
  * the specified [init] function.
  */
 inline fun <T> MutableGrid(width: Int, height: Int, init: (Point) -> T): MutableGrid<T> {
@@ -43,21 +58,43 @@ inline fun <T> MutableGrid(width: Int, height: Int, init: (Point) -> T): Mutable
     }
 }
 
-fun <T> Grid(map: Map<Point, T>, default: T): Grid<T> = Grid(map) { default }
+fun <T> Grid(map: Map<Point, T>, default: T): Grid<T> = MutableGrid(map, default)
+fun <T> MutableGrid(map: Map<Point, T>, default: T): MutableGrid<T> = MutableGrid(map) { default }
 
-inline fun <T> Grid(width: Int, height: Int, map: Map<Point, T>, crossinline default: (Point) -> T): Grid<T> =
-    Grid(width, height) { p -> map.getOrElse(p) { default(p) } }
+inline fun <T> Grid(map: Map<Point, T>, crossinline default: (Point) -> T): Grid<T> =
+    MutableGrid(map, default)
 
-inline fun <T> Grid(map: Map<Point, T>, crossinline default: (Point) -> T): Grid<T> {
-    val (first, last) = map.keys.boundingArea() ?: return emptyList()
+inline fun <T> MutableGrid(map: Map<Point, T>, crossinline default: (Point) -> T): MutableGrid<T> {
+    val (first, last) = map.keys.boundingArea() ?: return mutableListOf()
     require(first.x >= 0 && first.y >= 0) {
         "Given Map contains negative points. Maybe construct using Grid(width, height) { custom translation }"
     }
     val area = origin to last
-    return Grid(area.width, area.height) { p ->
-        map.getOrElse(p) { default(p) }
-    }
+    return MutableGrid(area, map, default)
 }
+
+inline fun <T> Grid(area: Area, map: Map<Point, T>, crossinline default: (Point) -> T): Grid<T> =
+    MutableGrid(area, map, default)
+
+inline fun <T> MutableGrid(area: Area, map: Map<Point, T>, crossinline default: (Point) -> T): MutableGrid<T> {
+    area.requireOrigin()
+    return MutableGrid(area.width, area.height, map, default)
+}
+
+inline fun <T> Grid(width: Int, height: Int, map: Map<Point, T>, crossinline default: (Point) -> T): Grid<T> =
+    MutableGrid(width, height, map, default)
+
+inline fun <T> MutableGrid(
+    width: Int,
+    height: Int,
+    map: Map<Point, T>,
+    crossinline default: (Point) -> T
+): MutableGrid<T> =
+    MutableGrid(width, height) { p -> map.getOrElse(p) { default(p) } }
+
+@PublishedApi
+internal fun Area.requireOrigin() =
+    require(first == origin) { "Area for grid must start at origin, but $this was given." }
 
 /**
  * Returns a new [MutableGrid] filled with all elements of this Grid.
