@@ -15,6 +15,29 @@ import io.kotest.property.checkAll
 
 class CollectionExtensionTests : ShouldSpec({
 
+    context("minMax") {
+        should("work for all Int lists") {
+            checkAll<List<Int>> { list ->
+                val min = list.minOrNull()
+                val max = list.maxOrNull()
+
+                list.minMaxOrNull() should { result ->
+                    result?.min shouldBe min
+                    result?.max shouldBe max
+
+                    result?.start shouldBe min
+                    result?.endInclusive shouldBe max
+
+                    if (result != null) {
+                        val (minComponent, maxComponent) = result
+                        minComponent shouldBe min
+                        maxComponent shouldBe max
+                    }
+                }
+            }
+        }
+    }
+
     context("Iterable.minN and Iterable.maxN") {
         should("match less efficient sorted().take(n) result") {
             val scenario = arbitrary {

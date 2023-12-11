@@ -1,15 +1,22 @@
 package utils
 
+import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.ints.shouldBeExactly
 import io.kotest.matchers.shouldBe
-import org.junit.jupiter.api.Test
 
-class GridExtensionsTest {
+class GridExtensionsTest : FunSpec({
 
     val matrix = listOf(listOf(1, 2, 3), listOf(4, 5, 6), listOf(7, 8, 9))
 
-    @Test
-    fun `create and work with Grid`() {
+    context("transpose") {
+        test("works for non square grid") {
+            val grid = Grid(3, 2) { it }
+
+            grid.transposed() shouldBe Grid(2, 3) { it.second to it.first }
+        }
+    }
+
+    test("create and work with Grid") {
 
         val g = matrix.asGrid()
 
@@ -36,4 +43,4 @@ class GridExtensionsTest {
     }
 
 
-}
+})

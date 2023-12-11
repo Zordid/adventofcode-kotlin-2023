@@ -20,6 +20,8 @@ fun <T> List<List<T>>.asGrid(): Grid<T> = this
 val Grid<*>.width: Int get() = firstOrNull()?.size ?: 0
 val Grid<*>.height: Int get() = size
 val Grid<*>.area: Area get() = origin to lastPoint
+val Grid<*>.colIndices: IntRange get() = firstOrNull()?.indices ?: IntRange.EMPTY
+val Grid<*>.rowIndices: IntRange get() = indices
 
 /**
  * The last (bottom right) point in this [Grid] or `-1 to -1` for an empty Grid.
@@ -155,8 +157,10 @@ inline fun <T> Grid<T>.forArea(f: (p: Point) -> Unit) {
             f(x to y)
 }
 
-fun <T> Grid<T>.transposed() =
-    List(height) { row -> List(height) { col -> this[col][row] } }
+fun <T> Grid<T>.row(row: Int): List<T> = this[row]
+fun <T> Grid<T>.column(col: Int): List<T> = List(height) { row -> this[row][col] }
+
+fun <T> Grid<T>.transposed(): Grid<T> = Grid(height, width) { (x, y) -> this[x][y] }
 
 fun <T> Grid<T>.toMapGrid(vararg sparseElements: T): Map<Point, T> =
     toMapGrid { it in sparseElements }
