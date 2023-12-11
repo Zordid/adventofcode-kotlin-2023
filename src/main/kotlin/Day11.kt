@@ -9,7 +9,7 @@ class Day11 : Day(11, 2023, "Cosmic Expansion") {
         u[it].count { it == '#' } == 0
     }
     private val emptyCols = u.colIndices.filter { col ->
-        u.indices.count { row -> u[row][col] == '#' } == 0
+        u.rowIndices.count { row -> u[row][col] == '#' } == 0
     }
 
     override fun part1() = universeDistances(2)
