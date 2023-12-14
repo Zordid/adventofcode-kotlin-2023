@@ -27,6 +27,8 @@ dependencies {
     implementation("guru.nidi:graphviz-kotlin:0.18.1")
     implementation("org.slf4j:slf4j-nop:2.0.5")
     //implementation("ch.qos.logback", "logback-classic", "1.2.3")
+    implementation("io.arrow-kt:arrow-core:1.2.0")
+    implementation("io.arrow-kt:arrow-fx-coroutines:1.2.0")
 
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
