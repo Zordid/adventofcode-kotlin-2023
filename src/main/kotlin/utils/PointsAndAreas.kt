@@ -228,15 +228,24 @@ operator fun Direction.times(n: Int): Point = vector * n
 operator fun Point.plus(direction: Direction): Point = this + direction.vector
 operator fun Point.minus(direction: Direction): Point = this - direction.vector
 
-enum class Direction4(override val vector: Point, override val symbol: Char) : Direction {
-    NORTH(0 to -1, '^'),
-    EAST(1 to 0, '>'),
-    SOUTH(0 to 1, 'v'),
-    WEST(-1 to 0, '<');
+const val LEFT_ARROW = '\u2190'
+const val UP_ARROW = '\u2191'
+const val RIGHT_ARROW = '\u2192'
+const val DOWN_ARROW = '\u2193'
+const val NW_ARROW = '\u2196'
+const val NE_ARROW = '\u2197'
+const val SE_ARROW = '\u2198'
+const val SW_ARROW = '\u2199'
 
-    override val right by lazy { entries[(ordinal + 1) % entries.size] }
-    override val left by lazy { entries[(ordinal - 1 + entries.size) % entries.size] }
-    override val opposite by lazy { entries[(ordinal + entries.size / 2) % entries.size] }
+enum class Direction4(override val vector: Point, override val symbol: Char) : Direction {
+    NORTH(0 to -1, UP_ARROW),
+    EAST(1 to 0, RIGHT_ARROW),
+    SOUTH(0 to 1, DOWN_ARROW),
+    WEST(-1 to 0, LEFT_ARROW);
+
+    override val right by lazy { entries[(ordinal + 1).mod(entries.size)] }
+    override val left by lazy { entries[(ordinal - 1).mod(entries.size)] }
+    override val opposite by lazy { entries[(ordinal + entries.size / 2).mod(entries.size)] }
 
     companion object {
         val all = entries
@@ -253,11 +262,11 @@ enum class Direction4(override val vector: Point, override val symbol: Char) : D
             all.firstOrNull { it.vector.x == v.x.sign && it.vector.y == v.y.sign }
 
         fun interpret(s: Any): Direction = when (s.toString().uppercase()) {
-            NORTH.name, "N", "U" -> NORTH
-            EAST.name, "E", "R" -> EAST
-            SOUTH.name, "S", "D" -> SOUTH
-            WEST.name, "W", "L" -> WEST
-            else -> error("What does '$s' mean?")
+            NORTH.name, "N", "UP", "U" -> NORTH
+            EAST.name, "E", "RIGHT", "R" -> EAST
+            SOUTH.name, "S", "DOWN", "D" -> SOUTH
+            WEST.name, "W", "LEFT", "L" -> WEST
+            else -> error("What direction should '$s' indicate?")
         }
 
         inline fun forEach(action: (Direction) -> Unit) {
@@ -267,22 +276,22 @@ enum class Direction4(override val vector: Point, override val symbol: Char) : D
 }
 
 enum class Direction8(override val vector: Point, override val symbol: Char) : Direction {
-    NORTH(0 to -1, '^'),
-    NORTHEAST(1 to -1, '/'),
-    EAST(1 to 0, '>'),
-    SOUTHEAST(1 to 1, '\\'),
-    SOUTH(0 to 1, 'v'),
-    SOUTHWEST(-1 to 1, '/'),
-    WEST(-1 to 0, '<'),
-    NORTHWEST(-1 to -1, '\\');
+    NORTH(0 to -1, UP_ARROW),
+    NORTHEAST(1 to -1, NE_ARROW),
+    EAST(1 to 0, RIGHT_ARROW),
+    SOUTHEAST(1 to 1, SE_ARROW),
+    SOUTH(0 to 1, DOWN_ARROW),
+    SOUTHWEST(-1 to 1, SW_ARROW),
+    WEST(-1 to 0, LEFT_ARROW),
+    NORTHWEST(-1 to -1, NW_ARROW);
 
     override val right by lazy { entries[(ordinal + 1).mod(entries.size)] }
     override val left by lazy { entries[(ordinal - 1).mod(entries.size)] }
     override val opposite by lazy { entries[(ordinal + entries.size / 2).mod(entries.size)] }
 
     companion object {
-        val values = entries
-        val allVectors = values.map { it.vector }
+        val all = entries
+        val allVectors = all.map { it.vector }
 
         val UP = NORTH
         val RIGHT = EAST
@@ -292,10 +301,10 @@ enum class Direction8(override val vector: Point, override val symbol: Char) : D
         fun ofVector(p1: Point, p2: Point) = ofVector(p2 - p1)
 
         fun ofVector(v: Point) =
-            values.firstOrNull { it.vector.x == v.x.sign && it.vector.y == v.y.sign }
+            all.firstOrNull { it.vector.x == v.x.sign && it.vector.y == v.y.sign }
 
         inline fun forEach(action: (Direction) -> Unit) {
-            values.forEach(action)
+            all.forEach(action)
         }
     }
 }

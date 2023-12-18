@@ -19,7 +19,7 @@ internal class PointsAndAreasKtTest {
         Direction4.WEST.right shouldBe Direction4.NORTH
 
         Direction4.ofVector(Direction4.NORTH.vector.rotateLeft90(-2)) shouldBe Direction4.SOUTH
-
+        Direction4.ofVector(Direction4.EAST.vector.rotateLeft90(-2)) shouldBe Direction4.WEST
     }
 
     @Test
@@ -34,6 +34,7 @@ internal class PointsAndAreasKtTest {
         Direction8.WEST.right shouldBe Direction8.NORTHWEST
 
         Direction8.ofVector(Direction8.NORTH.vector.rotateLeft90(-2)) shouldBe Direction8.SOUTH
+        Direction8.ofVector(Direction8.NORTHEAST.vector.rotateLeft90(-2)) shouldBe Direction8.SOUTHWEST
     }
 
     private fun Area.assertArea(emptiness: Boolean, width: Int, height: Int, border: Int) {
