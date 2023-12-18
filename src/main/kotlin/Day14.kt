@@ -2,47 +2,48 @@ import utils.*
 
 class Day14 : Day(14, 2023, "Parabolic Reflector Dish") {
 
-    val p = inputAsGrid
+    private val platform = inputAsGrid
 
-    override fun part1(): Any? {
-        return p.tiltNorth().totalLoad()
-    }
+    override fun part1() = platform.tiltNorth().totalLoad()
 
-    override fun part2(): Any? {
-        val cache = mutableMapOf<Grid<Char>, Long>()
+    override fun part2(): Long {
+        val requiredCycles = 1_000_000_000
 
-        var pc = p
-        var count = 0L
-        do {
-            cache[pc] = count
-            pc = pc.cycle()
-            count++
-        } while (pc !in cache)
+        val (startCycle, endCycle, endSituation) = cycleDetector(platform) { it.cycle() }
+        val cycleLength = endCycle - startCycle
 
-        val startCycle = cache[pc]!!
-        val cycleLength = count - startCycle
-        println("Same after $count, was before like this at ${cache[pc]} - cycle length $cycleLength!")
+        alog { "Same after $endCycle, was before like this at $startCycle - cycle length $cycleLength!" }
 
-        val d = 1000000000L
-
-        val remain = d - count
+        val remain = requiredCycles - endCycle
         val cyclesIn = remain / cycleLength
-        println("remain: $remain, that is $cyclesIn cycles")
-        val at = count + cyclesIn * cycleLength
-        println("then we're at $at")
-        val left = d - at
+        alog { "remain: $remain, that is $cyclesIn cycles" }
+        val at = endCycle + cyclesIn * cycleLength
+        alog { "then we're at $at" }
+        val left = requiredCycles - at
 
-        repeat(left.toInt()) {
-            pc = pc.cycle()
-        }
-        return pc.totalLoad()
+        return generateSequence(endSituation) { it.cycle() }.take(left + 1).last().totalLoad()
     }
 
-    fun Grid<Char>.cycle(): Grid<Char> =
+    private fun <T> cycleDetector(seed: T, process: (T) -> T): Triple<Int, Int, T> {
+        val cache = mutableMapOf<T, Int>()
+
+        var current = seed
+        var count = 0
+        do {
+            cache[current] = count
+            current = process(current)
+            count++
+        } while (current !in cache)
+
+        val startCycle = cache[current]!!
+        val endCycle = count
+        return Triple(startCycle, endCycle, current)
+    }
+
+    private fun Grid<Char>.cycle(): Grid<Char> =
         tiltNorth().tiltWest().tiltSouth().tiltEast()
 
-
-    fun Grid<Char>.tiltNorth(): Grid<Char> {
+    private fun Grid<Char>.tiltNorth(): Grid<Char> {
         val n = toMutableGrid()
         colIndices.forEach { colIdx ->
             val col = column(colIdx)
@@ -53,7 +54,7 @@ class Day14 : Day(14, 2023, "Parabolic Reflector Dish") {
         return n
     }
 
-    fun Grid<Char>.tiltWest(): Grid<Char> {
+    private fun Grid<Char>.tiltWest(): Grid<Char> {
         val n = toMutableGrid()
         rowIndices.forEach { rowIdx ->
             val row = row(rowIdx)
@@ -64,7 +65,7 @@ class Day14 : Day(14, 2023, "Parabolic Reflector Dish") {
         return n
     }
 
-    fun Grid<Char>.tiltEast(): Grid<Char> {
+    private fun Grid<Char>.tiltEast(): Grid<Char> {
         val n = toMutableGrid()
         rowIndices.forEach { rowIdx ->
             val row = row(rowIdx)
@@ -75,7 +76,7 @@ class Day14 : Day(14, 2023, "Parabolic Reflector Dish") {
         return n
     }
 
-    fun Grid<Char>.tiltSouth(): Grid<Char> {
+    private fun Grid<Char>.tiltSouth(): Grid<Char> {
         val n = toMutableGrid()
         colIndices.forEach { colIdx ->
             val col = column(colIdx)
@@ -86,25 +87,24 @@ class Day14 : Day(14, 2023, "Parabolic Reflector Dish") {
         return n
     }
 
-    fun List<Char>.compactLeft(): List<Char> =
+    private fun List<Char>.compactLeft(): List<Char> =
         splitBy { it == '#' }.map {
             val count = it.count { it == 'O' }
             List(count) { 'O' } + List(it.size - count) { '.' } + '#'
         }.flatten().take(size)
 
-    fun List<Char>.compactRight(): List<Char> =
+    private fun List<Char>.compactRight(): List<Char> =
         splitBy { it == '#' }.map {
             val count = it.count { it == 'O' }
             List(it.size - count) { '.' } + List(count) { 'O' } + '#'
         }.flatten().take(size)
 
 
-    fun Grid<Char>.totalLoad(): Long {
-        return rowIndices.sumOf {
+    private fun Grid<Char>.totalLoad(): Long =
+        rowIndices.sumOf {
             val f = area.height - it
             row(it).count { it == 'O' }.toLong() * f
         }
-    }
 
 }
 
