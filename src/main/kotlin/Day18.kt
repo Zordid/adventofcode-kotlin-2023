@@ -1,54 +1,54 @@
 import utils.*
+import utils.Direction4.Companion.DOWN
+import utils.Direction4.Companion.LEFT
+import utils.Direction4.Companion.RIGHT
+import utils.Direction4.Companion.UP
 import kotlin.math.abs
 
 class Day18 : Day(18, 2023, "Lavaduct Lagoon") {
 
-    val p = input.map {
-        val (d, s, c) = it.split(' ')
-        Triple(
-            when (d) {
-                "R" -> Direction4.RIGHT
-                "L" -> Direction4.LEFT
-                "U" -> Direction4.UP
-                "D" -> Direction4.DOWN
-                else -> error(d)
-            }, s.toInt(), c.drop(1).dropLast(1)
-        )
+    private val p1Instructions = input.map {
+        val (d, s, _) = it.split(' ')
+        val steps = s.toInt()
+        val dir = when (d) {
+            "R" -> RIGHT
+            "D" -> DOWN
+            "L" -> LEFT
+            else -> UP
+        }
+        dir to steps
     }
 
-    val p2 = input.map {
+    private val p2Instructions = input.map {
         val (_, _, c) = it.split(' ')
         val steps = c.drop(2).dropLast(2).toInt(16)
         val dir = when (c.dropLast(1).last()) {
-            '0' -> Direction4.RIGHT
-            '1' -> Direction4.DOWN
-            '2' -> Direction4.LEFT
-            '3' -> Direction4.UP
-            else -> error(c)
+            '0' -> RIGHT
+            '1' -> DOWN
+            '2' -> LEFT
+            else -> UP
         }
         dir to steps
-    }.show()
+    }
 
-    override fun part1(): Any? {
+    override fun part1(): Int {
         val map = mutableMapOf<Point, String>()
 
         var pos = origin
-        p.forEach { (d, s, c) ->
+        p1Instructions.forEach { (d, s) ->
             val end = pos + (d.vector * s)
-            (pos..end).forEach { map[it] = c }
+            (pos..end).forEach { map[it] = "#" }
             pos = end
         }
 
-        val xr = map.keys.map { it.x }.minMax()
-        val yr = map.keys.map { it.y }.minMax()
-        val area = (xr.min to yr.min) to (xr.max to yr.max)
-        val bigger = area.grow(1)
+        val area = map.area
+        val bigger = area + 1
 
         println(bigger.size)
         alog { bigger }
         println(map.size)
 
-        val q = queueOf(bigger.upperLeft)
+        val q = dequeOf(bigger.upperLeft)
 
         val seen = mutableSetOf<Point>()
         while (q.isNotEmpty()) {
@@ -58,11 +58,10 @@ class Day18 : Day(18, 2023, "Lavaduct Lagoon") {
         }
 
         log {
-            (map.formatted(restrictArea = bigger) { x, c ->
+            (map.formatted(area = bigger) { x, c ->
                 when {
                     x in seen -> "~"
-                    c != "." -> "#"
-                    else -> c
+                    else -> "#"
                 }
             })
         }
@@ -72,18 +71,21 @@ class Day18 : Day(18, 2023, "Lavaduct Lagoon") {
         return bigger.size - seen.size
     }
 
-    override fun part2(): Any? {
-        val perimeter = p2.sumOf { it.second.toLong() }
-        val corners = p2.runningFold(origin) { acc, instruction ->
+    override fun part2(): Long {
+        val perimeter = p2Instructions.sumOf { it.second.toLong() }
+        val corners = p2Instructions.runningFold(origin) { acc, instruction ->
             acc + (instruction.first * instruction.second)
         }
         require(corners.first() == corners.last()) { "not a closed loop" }
+        require(perimeter % 2 == 0L) { "perimeter of $perimeter cannot be halved" }
 
+        // area by Shoelace algorithm https://en.wikipedia.org/wiki/Shoelace_formula
+        // https://youtu.be/0KjG8Pg6LGk?si=qC_1iX1YhQlGvI1o
         val area = abs(corners.zipWithNext().sumOf { (ci, cj) ->
             ci.x.toLong() * cj.y - cj.x.toLong() * ci.y
         }).also { require(it % 2 == 0L) { "shoelace area $it cannot be halved" } } / 2
-        require(perimeter % 2 == 0L) { "perimeter of $perimeter cannot be halved" }
 
+        // according to Pick's theorem: https://en.wikipedia.org/wiki/Pick%27s_theorem
         val inside = area - perimeter / 2 + 1
         return inside + perimeter
     }

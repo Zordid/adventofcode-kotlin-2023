@@ -18,7 +18,7 @@ class Day16 : Day(16, 2023, "The Floor Will Be Lava") {
 
     private fun Grid<Char>.countEnergizedTiles(start: Point, direction: Direction4): Int {
         val beenHere = mutableSetOf<Pair<Point, Direction4>>()
-        val activeBeams = queueOf(start - direction to direction)
+        val activeBeams = dequeOf(start - direction to direction)
         while (activeBeams.isNotEmpty()) {
             val (pos, dir) = activeBeams.removeFirst()
             val nextPos = pos + dir

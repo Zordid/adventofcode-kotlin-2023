@@ -189,6 +189,8 @@ inline fun Area.forBorder(f: (p: Point) -> Unit) {
 }
 
 operator fun Area.contains(p: Point) = p.x in first.x..second.x && p.y in first.y..second.y
+operator fun Area.plus(amount: Int) = grow(by = amount)
+operator fun Area.minus(amount: Int) = shrink(by = amount)
 
 val Area.width: Int
     get() = (second.x - first.x + 1).coerceAtLeast(0)
@@ -232,12 +234,12 @@ enum class Direction4(override val vector: Point, override val symbol: Char) : D
     SOUTH(0 to 1, 'v'),
     WEST(-1 to 0, '<');
 
-    override val right by lazy { values()[(ordinal + 1) % values().size] }
-    override val left by lazy { values()[(ordinal - 1 + values().size) % values().size] }
-    override val opposite by lazy { values()[(ordinal + values().size / 2) % values().size] }
+    override val right by lazy { entries[(ordinal + 1) % entries.size] }
+    override val left by lazy { entries[(ordinal - 1 + entries.size) % entries.size] }
+    override val opposite by lazy { entries[(ordinal + entries.size / 2) % entries.size] }
 
     companion object {
-        val all = values().toList()
+        val all = entries
         val allVectors = all.map { it.vector }
 
         val UP = NORTH
@@ -274,12 +276,12 @@ enum class Direction8(override val vector: Point, override val symbol: Char) : D
     WEST(-1 to 0, '<'),
     NORTHWEST(-1 to -1, '\\');
 
-    override val right by lazy { values()[(ordinal + 1).mod(values().size)] }
-    override val left by lazy { values()[(ordinal - 1).mod(values().size)] }
-    override val opposite by lazy { values()[(ordinal + values().size / 2).mod(values().size)] }
+    override val right by lazy { entries[(ordinal + 1).mod(entries.size)] }
+    override val left by lazy { entries[(ordinal - 1).mod(entries.size)] }
+    override val opposite by lazy { entries[(ordinal + entries.size / 2).mod(entries.size)] }
 
     companion object {
-        val values = values().toList()
+        val values = entries
         val allVectors = values.map { it.vector }
 
         val UP = NORTH

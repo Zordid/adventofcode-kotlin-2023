@@ -79,6 +79,17 @@ data class MinMaxRange<T : Comparable<T>>(
     override val endInclusive: T get() = max
 }
 
+val MinMaxRange<Int>.range: IntRange get() = min..max
+val MinMaxRange<Long>.range: LongRange get() = min..max
+val MinMaxRange<Char>.range: CharRange get() = min..max
+
+@JvmName("iteratorInt")
+operator fun MinMaxRange<Int>.iterator(): Iterator<Int> = range.iterator()
+@JvmName("iteratorLong")
+operator fun MinMaxRange<Long>.iterator(): Iterator<Long> = range.iterator()
+@JvmName("iteratorChar")
+operator fun MinMaxRange<Char>.iterator(): Iterator<Char> = range.iterator()
+
 /**
  * Returns the smallest and largest element or throws [NoSuchElementException] if there are no elements.
  */
