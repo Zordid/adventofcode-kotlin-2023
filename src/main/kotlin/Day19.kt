@@ -32,64 +32,59 @@ class Day19 : Day(19, 2023, "Aplenty") {
     sealed interface Rule {
         val next: String
         fun matches(part: List<Int>): Boolean
-        fun split(parts: PotentialPart): Pair<PotentialPart, PotentialPart>
+        fun split(parts: PotentialPart): Pair<PotentialPart?, PotentialPart?>
 
         data class LessThan(val category: Int, val value: Int, override val next: String) : Rule {
             override fun matches(part: List<Int>) = part[category] < value
 
-            override fun split(parts: PotentialPart): Pair<PotentialPart, PotentialPart> {
+            override fun split(parts: PotentialPart): Pair<PotentialPart?, PotentialPart?> {
                 val relevant = parts[category]
                 val (matching, notMatching) =
-                    relevant?.let { range ->
-                        when {
-                            value in range ->
-                                (range.first..<value) to (value..range.last)
+                    when {
+                        value in relevant ->
+                            (relevant.first..<value) to (value..relevant.last)
 
-                            value > range.last ->
-                                range to null
+                        value > relevant.last ->
+                            relevant to null
 
-                            else -> null to null
-                        }
-                    } ?: (null to null)
-                return parts.mapIndexed { idx, r ->
-                    if (idx == category) matching else r
-                } to parts.mapIndexed { idx, r ->
-                    if (idx == category) notMatching else r
-                }
+                        else -> null to null
+                    }
+                return parts.patch(category, matching) to parts.patch(category, notMatching)
             }
         }
 
         data class GreaterThan(val category: Int, val value: Int, override val next: String) : Rule {
             override fun matches(part: List<Int>) = part[category] > value
 
-            override fun split(parts: PotentialPart): Pair<PotentialPart, PotentialPart> {
+            override fun split(parts: PotentialPart): Pair<PotentialPart?, PotentialPart?> {
                 val relevant = parts[category]
                 val (matching, notMatching) =
-                    relevant?.let { range ->
-                        when {
-                            value in range ->
-                                ((value + 1)..range.last) to (range.first..value)
+                    when {
+                        value in relevant ->
+                            ((value + 1)..relevant.last) to (relevant.first..value)
 
-                            value < range.first ->
-                                range to null
+                        value < relevant.first ->
+                            relevant to null
 
-                            else -> null to null
-                        }
-                    } ?: (null to null)
-                return parts.mapIndexed { idx, r ->
-                    if (idx == category) matching else r
-                } to parts.mapIndexed { idx, r ->
-                    if (idx == category) notMatching else r
-                }
+                        else -> null to null
+                    }
+                return parts.patch(category, matching) to parts.patch(category, notMatching)
             }
         }
 
         data class Unconditional(override val next: String) : Rule {
             override fun matches(part: List<Int>) = true
 
-            override fun split(parts: PotentialPart): Pair<PotentialPart, PotentialPart> =
-                parts to listOf(null, null, null, null)
+            override fun split(parts: PotentialPart): Pair<PotentialPart?, PotentialPart?> =
+                parts to null
         }
+
+        fun List<IntRange>.patch(category: Int, newRange: IntRange?): List<IntRange>? =
+            newRange?.let { patched ->
+                mapIndexed { index, range ->
+                    patched.takeIf { index == category } ?: range
+                }
+            }
     }
 
     override fun part1(): Int {
@@ -114,25 +109,28 @@ class Day19 : Day(19, 2023, "Aplenty") {
             1..4000,
         )
 
-        fun countAccepted(wf: Workflow, parts: PotentialPart): Long =
+        fun countAccepted(wf: Workflow, parts: PotentialPart?): Long =
             wf.rules.fold(parts to 0L) { (remaining, count), rule ->
-                val (matching, notMatching) = rule.split(remaining)
-                notMatching to count + when (rule.next) {
-                    "A" -> matching.combinations()
-                    "R" -> 0
-                    else -> countAccepted(workflows[rule.next]!!, matching)
-                }
+                if (remaining != null) {
+                    val (matching, notMatching) = rule.split(remaining)
+                    notMatching to count + when (rule.next) {
+                        "A" -> matching?.combinations() ?: 0
+                        "R" -> 0
+                        else -> countAccepted(workflows[rule.next]!!, matching)
+                    }
+                } else
+                    null to count
             }.second
 
         return countAccepted(workflows["in"]!!, potentialPart)
     }
 
     private fun PotentialPart.combinations(): Long =
-        productOf { r -> r?.let { it.last - it.first + 1 } ?: 0 }
+        productOf { r -> r.last - r.first + 1 }
 
 }
 
-typealias PotentialPart = List<IntRange?>
+typealias PotentialPart = List<IntRange>
 
 fun main() {
     solve<Day19> {
