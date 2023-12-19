@@ -72,22 +72,22 @@ class Day18 : Day(18, 2023, "Lavaduct Lagoon") {
     }
 
     override fun part2(): Long {
-        val perimeter = p2Instructions.sumOf { it.second.toLong() }
+        val boundary = p2Instructions.sumOf { it.second.toLong() }
         val corners = p2Instructions.runningFold(origin) { acc, instruction ->
             acc + (instruction.first * instruction.second)
         }
         require(corners.first() == corners.last()) { "not a closed loop" }
-        require(perimeter % 2 == 0L) { "perimeter of $perimeter cannot be halved" }
 
         // area by Shoelace algorithm https://en.wikipedia.org/wiki/Shoelace_formula
         // https://youtu.be/0KjG8Pg6LGk?si=qC_1iX1YhQlGvI1o
         val area = abs(corners.zipWithNext().sumOf { (ci, cj) ->
             ci.x.toLong() * cj.y - cj.x.toLong() * ci.y
-        }).also { require(it % 2 == 0L) { "shoelace area $it cannot be halved" } } / 2
+        }) / 2
 
-        // according to Pick's theorem: https://en.wikipedia.org/wiki/Pick%27s_theorem
-        val inside = area - perimeter / 2 + 1
-        return inside + perimeter
+        // according to Pick's theorem: A = i + b / 2 - 1
+        // https://en.wikipedia.org/wiki/Pick%27s_theorem
+        val inside = area - boundary / 2 + 1
+        return inside + boundary
     }
 
 }
