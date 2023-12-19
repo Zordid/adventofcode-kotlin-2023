@@ -2,6 +2,8 @@
 
 package utils
 
+import kotlin.experimental.ExperimentalTypeInference
+
 class InfiniteList<T>(private val backingList: List<T>) : List<T> by backingList {
     init {
         require(backingList.isNotEmpty()) { "Cannot build an ${this::class.simpleName} from an empty list" }
@@ -50,28 +52,38 @@ class InfiniteList<T>(private val backingList: List<T>) : List<T> by backingList
 fun <K, V> Map<K, V>.flip(): Map<V, K> = asIterable().associate { (k, v) -> v to k }
 
 fun Iterable<Long>.product(): Long = reduce(Long::safeTimes)
+
+@OptIn(ExperimentalTypeInference::class)
+@OverloadResolutionByLambdaReturnType
+inline fun <T> Iterable<T>.productOf(selector: (T) -> Long): Long = fold(1L) { p, n -> p safeTimes selector(n) }
+
 fun Sequence<Long>.product(): Long = reduce(Long::safeTimes)
 
 @JvmName("intProduct")
 fun Iterable<Int>.product(): Long = fold(1L, Long::safeTimes)
 
+@OptIn(ExperimentalTypeInference::class)
+@OverloadResolutionByLambdaReturnType
+@JvmName("intProductOf")
+inline fun <T> Iterable<T>.productOf(selector: (T) -> Int): Long = fold(1L) { p, n -> p safeTimes selector(n) }
+
 @JvmName("intProduct")
 fun Sequence<Int>.product(): Long = fold(1L, Long::safeTimes)
 
 infix fun Int.safeTimes(other: Int) = (this * other).also {
-    check(other == 0 || it / other == this) { "Integer Overflow at $this * $other" }
+    check(other == 0 || it / other == this) { "Integer overflow at $this * $other" }
 }
 
 infix fun Long.safeTimes(other: Long) = (this * other).also {
-    check(other == 0L || it / other == this) { "Long Overflow at $this * $other" }
+    check(other == 0L || it / other == this) { "Long overflow at $this * $other" }
 }
 
 infix fun Long.safeTimes(other: Int) = (this * other).also {
-    check(other == 0 || it / other == this) { "Long Overflow at $this * $other" }
+    check(other == 0 || it / other == this) { "Long overflow at $this * $other" }
 }
 
 infix fun Int.safeTimes(other: Long) = (this.toLong() * other).also {
-    check(other == 0L || it / other == this.toLong()) { "Long Overflow at $this * $other" }
+    check(other == 0L || it / other == this.toLong()) { "Long overflow at $this * $other" }
 }
 
 fun Long.checkedToInt(): Int = let {

@@ -24,6 +24,7 @@ fun Iterable<Long>.gcd(): Long = reduce(::gcd)
  */
 fun lcm(a: Int, b: Int) = (a safeTimes b) / gcd(a, b)
 fun lcm(f: Int, vararg n: Int): Long = n.map { it.toLong() }.fold(f.toLong(), ::lcm)
+
 @JvmName("lcmForInt")
 fun Iterable<Int>.lcm(): Long = map { it.toLong() }.reduce(::lcm)
 
@@ -69,7 +70,10 @@ fun Long.primes(): Sequence<Long> = sequence {
 }
 
 infix fun Number.pow(power: Number): Double =
-    this.toDouble().pow(power.toDouble())
+    toDouble().pow(power.toDouble())
 
-infix fun Int.pow(power: Int): Int =
-    this.toDouble().pow(power.toDouble()).toInt()
+infix fun Int.pow(power: Int): Long =
+    toDouble().pow(power.toDouble()).let {
+        require(it <= Long.MAX_VALUE.toDouble()) { "$this to the power of $power exceeds Long range" }
+        it.toLong()
+    }
