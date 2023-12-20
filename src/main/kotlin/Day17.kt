@@ -26,9 +26,6 @@ class Day17 : Day(17, 2023, "Clumsy Crucible") {
 
             override fun cost(from: State, to: State): Int =
                 p[to.pos]
-
-            override fun costEstimation(from: State, to: State): Int =
-                from.pos manhattanDistanceTo to.pos
         }
 
         val start = State(origin, 0, null)
@@ -36,18 +33,14 @@ class Day17 : Day(17, 2023, "Clumsy Crucible") {
         val x = Dijkstra(start, g::neighborsOf, g::cost).search { it.pos == area.lowerRight }
 
         val path = x.path
-        println(p.formatted { pos, v ->
-            if (pos in path.map { it.pos })
-                path.first { it.pos == pos }.movedStraight.toString() else "."
-        })
+        log {
+            p.formatted { pos, v ->
+                if (pos in path.map { it.pos })
+                    path.first { it.pos == pos }.movedStraight.toString() else "."
+            }
+        }
 
         return path.drop(1).sumOf { p[it.pos] }
-    }
-
-    class X : Graph<State> {
-        override fun neighborsOf(node: State): Collection<State> {
-            TODO("Not yet implemented")
-        }
     }
 
     override fun part2(): Any? {
@@ -75,17 +68,15 @@ class Day17 : Day(17, 2023, "Clumsy Crucible") {
 
         val start = State(origin, 0, null)
 
-
-        X().dijkstraSearch(start, start)
-
-
         val x = Dijkstra(start, g::neighborsOf, g::cost).search { it.pos == area.lowerRight && it.movedStraight >= 4 }
 
         val path = x.path
-        println(p.formatted { pos, v ->
-            if (pos in path.map { it.pos })
-                path.first { it.pos == pos }.movedStraight.toString() else "."
-        })
+        log {
+            p.formatted { pos, v ->
+                if (pos in path.map { it.pos })
+                    path.first { it.pos == pos }.movedStraight.toString() else "."
+            }
+        }
 
         return path.drop(1).sumOf { p[it.pos] }
     }
