@@ -6,6 +6,11 @@ package utils
 fun <T> dequeOf(vararg elements: T) = ArrayDeque(elements.asList())
 
 /**
+ * Creates a deque ([ArrayDeque]) of the given elements.
+ */
+fun <T> dequeOf(elements: Iterable<T>) = ArrayDeque(elements.toList())
+
+/**
  * Creates a [MinPriorityQueue] with all [elements] initially added with their given priority.
  */
 fun <T> minPriorityQueueOf(vararg elements: Pair<T, Int>): MinPriorityQueue<T> =
