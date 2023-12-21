@@ -78,8 +78,8 @@ class AStarSearch<N>(
 
 class Dijkstra<N>(
     val startNode: N,
-    val neighborNodes: (N) -> Collection<N>,
-    val cost: (N, N) -> Int,
+    private val neighborNodes: (N) -> Collection<N>,
+    private val cost: ((N, N) -> Int)? = null,
 ) {
     private val dist = HashMap<N, Int>().apply { put(startNode, 0) }
     private val prev = HashMap<N, N>()
@@ -92,7 +92,7 @@ class Dijkstra<N>(
                 return SearchResult(u, dist, prev)
             }
             for (v in neighborNodes(u)) {
-                val alt = dist[u]!! + cost(u, v)
+                val alt = dist[u]!! + (cost?.invoke(u, v) ?: 1)
                 if (alt < dist.getOrDefault(v, Int.MAX_VALUE)) {
                     dist[v] = alt
                     prev[v] = u
