@@ -1,7 +1,7 @@
 import utils.*
 import java.math.BigInteger
 
-class Day21 : Day(21, 2023) {
+class Day21 : Day(21, 2023, "Step Counter") {
 
     val p = inputAsGrid
 
@@ -19,9 +19,9 @@ class Day21 : Day(21, 2023) {
     fun calcDistances(from: Direction8?): Map<Point, Int> =
         when (from) {
             null -> distances(start)
-            Direction8.SOUTH -> distances(start.x to area.lastRow)
+            Direction8.SOUTH -> distances(start.x to area.height - 1)
             Direction8.NORTH -> distances(start.x to 0)
-            Direction8.EAST -> distances(area.lastCol to start.y)
+            Direction8.EAST -> distances(area.width - 1 to start.y)
             Direction8.WEST -> distances(0 to start.y)
             Direction8.NORTHWEST -> distances(area.upperLeft)
             Direction8.NORTHEAST -> distances(area.upperRight)
@@ -32,30 +32,18 @@ class Day21 : Day(21, 2023) {
     fun maxDepth(from: Direction8?): Int =
         calcDistances(from).values.max()
 
-    val maxDepth = (Direction8.all + null).associateWith {
-        maxDepth(it)
-    }
-
-    val dp = mutableMapOf<Any, Int>()
-
-    fun cachedReachable(from: Direction8, limit: Int): Int {
-        val key = from to if (limit > maxDepth[from]!!) maxDepth[from]!! + limit % 2 else limit
-        dp[key]?.let { return it }
-        return reachable(from, limit).also { dp[key] = it }
-    }
-
-    fun reachable(from: Direction8?, limit: Int): Int =
+    fun reachable(from: Direction8?, limit: Int): Long =
         calcDistances(from).values.count {
             it <= limit && it % 2 == limit % 2
-        }
+        }.toLong()
 
-    override fun part1(): Int {
-        val S = if (area.height > 15) 64 else 6
+    override fun part1(): Long {
+        val S = if (testInput) 6 else 64
         return reachable(null, S)
     }
 
     override fun part2(): Any? {
-        var S = 26501365
+        val S = if (testInput) 5000 else 26501365
 
         alog { "Total gardens: $gardens" }
         alog { "Reachable gardens: ${distances(origin).size}" }
@@ -128,84 +116,6 @@ class Day21 : Day(21, 2023) {
         return res2
     }
 
-    data class MiniMap(val firstReached: Int, val landing: Point, val distances: DistMap)
-
-    data class DistMap(
-        val landing: Point,
-        val distances: Map<Point, Int>,
-        val reachable: Map<Direction4, Pair<Point, Int>>,
-        val largestDistance: Int,
-        val even: Int,
-        val odd: Int,
-    )
-
-    fun reachableIn(start: Point, stepsLeft: Int): Long {
-
-        fun n(pos: Point) =
-            pos.directNeighbors(area).filter { p[it] != '#' }
-
-        val dp = mutableMapOf<Point, DistMap>()
-
-        fun calcDist(start: Point): DistMap {
-            dp[start]?.let { return it }
-            val distances = Dijkstra(start, ::n).search { false }.distance
-            val reachable = Direction4.all.associateWith { dir ->
-                when (dir) {
-                    Direction4.NORTH -> (0..area.lastCol).map { it to 0 }.minBy { distances[it]!! }
-                        .let { it.x to area.lastRow to distances[it]!! + 1 }
-
-                    Direction4.SOUTH -> (0..area.lastCol).map { it to area.lastRow }.minBy { distances[it]!! }
-                        .let { it.x to 0 to distances[it]!! + 1 }
-
-                    Direction4.EAST -> (0..area.lastRow).map { area.lastCol to it }.minBy { distances[it]!! }
-                        .let { 0 to it.y to distances[it]!! + 1 }
-
-                    Direction4.WEST -> (0..area.lastRow).map { 0 to it }.minBy { distances[it]!! }
-                        .let { area.lastCol to it.y to distances[it]!! + 1 }
-                }
-            }
-
-            val largestDistance = distances.values.max()
-            val even = distances.values.count { it % 2 == 0 }
-            val odd = distances.size - even
-
-            return DistMap(start, distances, reachable, largestDistance, even, odd).also { dp[start] = it }
-        }
-
-        val q = minPriorityQueueOf(origin to 0)
-        val dist = mutableMapOf(origin to MiniMap(0, start, calcDist(start)))
-        val prev = HashMap<Point, Point>()
-        while (q.isNotEmpty()) {
-            //log { "${dist.size} left in queue ${q.size}" }
-
-            val u = q.removeFirst()
-            //log { "$u in ${dist[u]!!.firstReached}" }
-            if (dist[u]!!.firstReached > stepsLeft)
-                continue
-
-            Direction4.forEach { d ->
-                val n = u + d
-                val (potentialLanding, potentialDist) = dist[u]!!.distances.reachable[d]!!
-                val f = dist[u]!!.firstReached + potentialDist
-                val pp = dist[n]
-                if (pp == null || pp.firstReached > f) {
-                    dist[n] = MiniMap(f, potentialLanding, calcDist(potentialLanding))
-                    prev[n] = u
-                    q.insertOrUpdate(n, f)
-                }
-            }
-        }
-
-        return dist.values.filter { it.firstReached <= stepsLeft }.sumOf { x ->
-            val d = x.distances
-            if (x.firstReached + d.largestDistance <= stepsLeft) {
-                if (stepsLeft % 2 == 0) d.even else d.odd
-            } else {
-                d.distances.values.count { (x.firstReached + it) <= stepsLeft && (x.firstReached + it) % 2 == stepsLeft % 2 }
-            }.toLong()
-        }
-    }
-
 }
 
 fun main() {
@@ -223,7 +133,7 @@ fun main() {
             .##.#.####.
             .##..##.##.
             ...........
-        """.trimIndent() part1 16
+        """.trimIndent() part1 16 // part2 16733044
 
     }
 }
